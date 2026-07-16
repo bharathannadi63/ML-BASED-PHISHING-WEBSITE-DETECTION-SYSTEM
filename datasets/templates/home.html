@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Enhancing Phishing Detection: A machine learning approach with feature selection and deep learning models{% endblock %}
+
+{% block content %}
+<div class="hero-section">
+    <div class="hero-content">
+        <h1 class="hero-title">
+            Enhancing Phishing Detection
+        </h1>
+        <p class="hero-subtitle">
+            A Machine Learning Approach with Feature Selection and Deep Learning Models
+        </p>
+    </div>
+</div>
+
+<div class="card content-card">
+    <div class="abstract">
+        <h3>Project Overview</h3>
+        <div class="abstract-content">
+            <p>
+                This project presents a comprehensive Phishing Website Detection System that leverages advanced 
+                machine learning models to identify and classify potentially malicious websites. The system 
+                employs multiple machine learning and deep learning architectures including Random Forest, Feed Forward Neural Networks (FFNN), Wide & Deep 
+                networks, and TabNet to analyze URL features and predict the legitimacy of websites.
+            </p>
+            <p>
+                Phishing attacks continue to be a significant threat to cybersecurity, with attackers 
+                constantly evolving their techniques to deceive users. Traditional rule-based detection 
+                methods often fail to keep pace with these sophisticated attacks. Our system addresses this 
+                challenge by utilizing machine learning algorithms that can learn complex patterns from URL 
+                characteristics such as length, protocol type, domain structure, and other heuristic features.
+            </p>
+            <p>
+                The system provides real-time URL analysis, allowing users to quickly assess the safety of 
+                websites before accessing them. By extracting relevant features from URLs and processing them 
+                through trained models, the system can classify websites as Legitimate, Phishing, or Suspicious 
+                with high accuracy. Additionally, the system offers mitigation suggestions to help users 
+                protect themselves from potential threats.
+            </p>
+            <p>
+                This implementation serves as a final-year project demonstrating the application of machine 
+                learning in cybersecurity, providing both theoretical insights and practical solutions for 
+                combating phishing attacks.
+            </p>
+        </div>
+    </div>
+
+    <div class="cta-section">
+        {% if user %}
+            <a href="{{ url_for('phishing') }}" class="btn btn-primary btn-large">Start Detection</a>
+            <a href="{{ url_for('performance') }}" class="btn btn-secondary btn-large">View Performance Metrics</a>
+        {% else %}
+            <a href="{{ url_for('login') }}" class="btn btn-primary btn-large">Login to Continue</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

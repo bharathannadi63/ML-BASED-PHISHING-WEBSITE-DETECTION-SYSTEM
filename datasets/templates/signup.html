@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Sign up - Phishing Website Detection System{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 420px; margin: 0 auto;">
+    <h1 style="margin: 0 0 4px 0; font-size: 24px;">Create account</h1>
+    <p style="margin: 0 0 16px 0; color: var(--muted);">Sign up to use the phishing detector.</p>
+    {% if error %}
+    <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+    <form method="post" style="display: grid; gap: 12px;">
+        <input type="text" name="first_name" class="form-control" placeholder="First Name" required />
+        <input type="text" name="last_name" class="form-control" placeholder="Last Name" required />
+        <input type="email" name="email" class="form-control" placeholder="Email" required />
+        <input type="text" name="contact" class="form-control" placeholder="Contact" />
+        <input type="password" name="password" class="form-control" placeholder="Password (min 6 chars)" required />
+        <div style="display: flex; gap: 10px;">
+            <button type="submit" class="btn btn-primary" style="flex: 1;">Register</button>
+            <button type="reset" class="btn btn-secondary" style="flex: 1;">Reset</button>
+        </div>
+    </form>
+    <div style="margin-top: 12px; color: var(--muted); font-size: 13px; text-align: center;">
+        Already have an account? <a href="{{ url_for('login') }}">Login</a> · <a href="{{ url_for('home') }}">Home</a>
+    </div>
+</div>
+{% endblock %}
+

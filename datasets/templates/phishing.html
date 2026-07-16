@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block title %}Phishing Detection - Phishing Website Detection System{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1 class="card-title">Phishing URL Detection</h1>
+    
+    {% if not user %}
+    <div class="alert alert-error">
+        Please <a href="{{ url_for('login') }}">login</a> to access the Phishing Detection page.
+    </div>
+    {% else %}
+    
+    <form id="detectionForm" method="POST" action="{{ url_for('predict') }}">
+        <div class="form-group">
+            <label for="url">URL Check:</label>
+            <input 
+                type="text" 
+                id="url" 
+                name="url" 
+                class="form-control" 
+                placeholder="https://example.com"
+                value="{{ url or '' }}"
+                required
+            />
+        </div>
+
+        <p style="color: var(--muted); margin-bottom: 15px;">
+            <strong>Note:</strong> The system will analyze the URL using all four models (Random Forest, Feed Forward Neural Network, Wide & Deep, and TabNet) simultaneously and provide a comprehensive comparison.
+        </p>
+
+        <button type="submit" class="btn btn-primary">Check URL with All Models</button>
+        <a href="{{ url_for('performance') }}" class="btn btn-secondary" style="margin-left: 10px;">Performance Metrics</a>
+    </form>
+
+    {% if error %}
+    <div class="alert alert-error mt-4">
+        {{ error }}
+    </div>
+    {% endif %}
+
+    {% if results %}
+    <div class="mt-4">
+        <h2 style="margin-bottom: 20px; color: var(--accent);">Analysis Results</h2>
+        <div style="margin-bottom: 15px;">
+            <strong>URL Analyzed:</strong> <span style="word-break: break-all; color: var(--muted);">{{ url }}</span>
+        </div>
+
+        <!-- Results for each model -->
+        <div style="display: grid; gap: 20px; margin-bottom: 30px;">
+            {% for model_result in results %}
+            <div class="result-box {{ model_result.prediction|lower }}" style="padding: 20px;">
+                <h3 style="margin: 0 0 15px 0; color: inherit;">{{ model_result.model_name }}</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div>
+                        <strong>Prediction:</strong> 
+                        <span style="font-size: 18px; font-weight: bold;">{{ model_result.prediction }}</span>
+                    </div>
+                    <div>
+                        <strong>Phishing type:</strong>
+                        <span style="font-weight: bold; color: inherit;">{{ model_result.phishing_type|default('—', true) }}</span>
+                    </div>
+                    <div>
+                        <strong>Confidence:</strong> {{ "%.2f"|format(model_result.confidence * 100) }}%
+                    </div>
+                    <div>
+                        <strong>Accuracy:</strong> {{ model_result.accuracy }}%
+                    </div>
+                    <div>
+                        <strong>Precision:</strong> {{ model_result.precision }}%
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Comparison Table -->
+        <div class="card mt-4">
+            <h3 class="card-title" style="font-size: 20px; margin-bottom: 15px;">Model Comparison</h3>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Model</th>
+                        <th>Prediction</th>
+                        <th>Phishing Type</th>
+                        <th>Confidence</th>
+                        <th>Accuracy</th>
+                        <th>Precision</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for model_result in results %}
+                    <tr>
+                        <td><strong>{{ model_result.model_name }}</strong></td>
+                        <td>
+                            <span style="padding: 4px 8px; border-radius: 4px; 
+                                {% if model_result.prediction|lower == 'phishing' %}background-color: #f8d7da; color: #721c24;
+                                {% elif model_result.prediction|lower == 'suspicious' %}background-color: #fff3cd; color: #856404;
+                                {% else %}background-color: #d4edda; color: #155724;{% endif %}">
+                                {{ model_result.prediction }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if model_result.prediction|lower == 'phishing' %}
+                                <strong>{{ model_result.phishing_type|default('—', true) }}</strong>
+                            {% else %}
+                                {{ model_result.phishing_type|default('—', true) }}
+                            {% endif %}
+                        </td>
+                        <td>{{ "%.2f"|format(model_result.confidence * 100) }}%</td>
+                        <td>{{ model_result.accuracy }}%</td>
+                        <td>{{ model_result.precision }}%</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Calculate counts for recommendation -->
+        {% set phishing_count = results|selectattr('prediction', 'equalto', 'Phishing')|list|length %}
+        {% set suspicious_count = results|selectattr('prediction', 'equalto', 'Suspicious')|list|length %}
+        {% set legitimate_count = results|selectattr('prediction', 'equalto', 'Legitimate')|list|length %}
+        
+        <!-- Overall Recommendation -->
+        <div class="card mt-4" style="background-color: var(--bg);">
+            <h3 style="margin-bottom: 15px; color: var(--accent);">Overall Recommendation</h3>
+            {% if phishing_count >= 2 %}
+            {% set phishing_types = results|selectattr('prediction', 'equalto', 'Phishing')|map(attribute='phishing_type')|list %}
+            {% set most_common_type = phishing_types[0] if phishing_types else 'Phishing' %}
+            <div class="result-box phishing">
+                <strong>Warning:</strong> Multiple models classify this URL as <strong>Phishing</strong>. 
+                <br><br>
+                <strong>Phishing Type Detected:</strong> <span style="font-size: 16px;">{{ most_common_type }}</span>
+                <br><br>
+                It is strongly recommended to avoid this website.
+            </div>
+            {% elif suspicious_count >= 2 or (phishing_count == 1 and suspicious_count >= 1) %}
+            <div class="result-box suspicious">
+                <strong>Caution:</strong> This URL appears <strong>Suspicious</strong> based on model analysis. 
+                Exercise caution when accessing this website.
+            </div>
+            {% else %}
+            <div class="result-box legitimate">
+                <strong>Safe:</strong> The majority of models classify this URL as <strong>Legitimate</strong>. 
+                However, always practice safe browsing habits.
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Mitigation Suggestions -->
+        <div class="mitigation-box mt-4">
+            <h4>Mitigation Suggestions:</h4>
+            <ul>
+                {% if phishing_count >= 2 %}
+                {% set phishing_types = results|selectattr('prediction', 'equalto', 'Phishing')|map(attribute='phishing_type')|list %}
+                {% set detected_type = phishing_types[0] if phishing_types else '' %}
+                
+                {% if 'Deceptive' in detected_type or 'Credential' in detected_type %}
+                <li><strong>For {{ detected_type }}:</strong> Never enter login credentials on suspicious websites. Always access official websites directly by typing the URL.</li>
+                <li>Verify the website's authenticity by checking the official company website or contacting them directly.</li>
+                <li>Look for spelling errors in the domain name or unusual characters.</li>
+                <li>Check if the website uses proper SSL certificates (look for the padlock icon).</li>
+                {% elif 'HTTPS' in detected_type %}
+                <li><strong>For {{ detected_type }}:</strong> Remember that HTTPS does not guarantee a legitimate website. Phishers can also obtain SSL certificates.</li>
+                <li>Verify the certificate issuer and check if the domain matches the expected organization.</li>
+                <li>Do not trust a website solely based on HTTPS encryption.</li>
+                {% elif 'Obfuscation' in detected_type %}
+                <li><strong>For {{ detected_type }}:</strong> Be wary of URLs with unusual characters, excessive dots, or @ symbols.</li>
+                <li>Check the actual domain name carefully - attackers often use similar-looking domains.</li>
+                <li>Hover over links before clicking to see the actual destination URL.</li>
+                {% elif 'Baiting' in detected_type %}
+                <li><strong>For {{ detected_type }}:</strong> Be skeptical of offers that seem too good to be true.</li>
+                <li>Legitimate companies rarely ask for personal information via email or suspicious links.</li>
+                <li>Never provide personal or financial information to claim prizes or rewards.</li>
+                {% elif 'Tech Support' in detected_type %}
+                <li><strong>For {{ detected_type }}:</strong> Legitimate tech support will never ask for passwords or remote access via suspicious links.</li>
+                <li>Contact the company directly through their official website or phone number.</li>
+                <li>Never grant remote access to your computer unless you initiated the contact.</li>
+                {% else %}
+                <li><strong>General Phishing Protection:</strong> Do not enter any personal information or credentials on this website.</li>
+                <li>Do not click on any links or download files from this website.</li>
+                <li>Report this website to your organization's security team immediately.</li>
+                <li>Verify the website's authenticity through official channels before proceeding.</li>
+                <li>Use a reputable antivirus or security software to scan your system.</li>
+                {% endif %}
+                
+                <li>Enable two-factor authentication (2FA) on all important accounts.</li>
+                <li>Keep your browser and security software up to date.</li>
+                <li>Use browser security features and extensions for additional protection.</li>
+                {% elif suspicious_count >= 1 %}
+                <li>Exercise caution when accessing this website.</li>
+                <li>Verify the website's SSL certificate and domain authenticity.</li>
+                <li>Avoid entering sensitive information unless you can verify the website's legitimacy.</li>
+                <li>Check for spelling errors or unusual domain names.</li>
+                <li>Use browser security features and extensions for additional protection.</li>
+                {% else %}
+                <li>While this website appears legitimate, always practice safe browsing habits.</li>
+                <li>Verify SSL certificates and look for HTTPS connections.</li>
+                <li>Be cautious when entering personal information, even on legitimate sites.</li>
+                <li>Keep your browser and security software up to date.</li>
+                {% endif %}
+            </ul>
+        </div>
+    {% endif %}
+
+    {% endif %}
+</div>
+{% endblock %}

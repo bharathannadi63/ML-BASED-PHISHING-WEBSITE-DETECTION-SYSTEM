@@ -1,0 +1,45 @@
+{
+  "generated_at": "2026-05-01T17:29:24.207373+00:00",
+  "evaluation": {
+    "threshold": 0.5,
+    "test_examples": 10000
+  },
+  "models": {
+    "random_forest": {
+      "display_name": "Random Forest",
+      "accuracy_pct": 80.9,
+      "precision_pct": 81.78,
+      "recall_pct": 79.52,
+      "f1_pct": 80.63,
+      "anti_phishing_rate_pct": 79.52,
+      "complexity": "Low-Medium"
+    },
+    "ffnn": {
+      "display_name": "Feed Forward Neural Network (FFNN)",
+      "accuracy_pct": 79.18,
+      "precision_pct": 80.54,
+      "recall_pct": 76.96,
+      "f1_pct": 78.71,
+      "anti_phishing_rate_pct": 76.96,
+      "complexity": "Medium"
+    },
+    "wide_deep": {
+      "display_name": "Wide & Deep Network",
+      "accuracy_pct": 71.16,
+      "precision_pct": 82.45,
+      "recall_pct": 53.76,
+      "f1_pct": 65.08,
+      "anti_phishing_rate_pct": 53.76,
+      "complexity": "High"
+    },
+    "tabnet": {
+      "display_name": "TabNet",
+      "accuracy_pct": 70.74,
+      "precision_pct": 79.97,
+      "recall_pct": 55.34,
+      "f1_pct": 65.41,
+      "anti_phishing_rate_pct": 55.34,
+      "complexity": "Medium-High"
+    }
+  }
+}

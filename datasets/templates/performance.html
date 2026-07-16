@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}Performance Metrics - Phishing Website Detection System{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1 class="card-title">Model Performance Metrics</h1>
+
+    {% if perf_has_data %}
+    <p style="color: var(--muted); margin-bottom: 12px;">
+        Metrics below are computed on the <strong>held-out test split</strong> from the last training run
+        (<code>train_model.py</code> or in-app training). Values refresh when <code>model_metrics.json</code> is regenerated.
+    </p>
+    <p style="color: var(--muted); margin-bottom: 30px; font-size: 14px;">
+        {% if perf_generated_at %}<strong>Generated:</strong> {{ perf_generated_at }}{% endif %}
+        {% if perf_test_examples %} &middot; <strong>Test examples:</strong> {{ perf_test_examples }}{% endif %}
+    </p>
+    {% else %}
+    <div class="alert alert-info" style="margin-bottom: 24px;">
+        No metrics file yet. Run <code>python train_model.py</code> from the project folder (or let the app train once)
+        to create <code>model_metrics.json</code>, then reload this page.
+    </div>
+    {% endif %}
+
+    <div class="chart-container">
+        <canvas id="performanceChart"></canvas>
+    </div>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Metric</th>
+                {% for m in perf_models %}
+                <th>{{ m.display_name }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Accuracy</strong></td>
+                {% for m in perf_models %}<td>{% if m.is_empty %}—{% else %}{{ "%.2f"|format(m.accuracy_pct) }}%{% endif %}</td>{% endfor %}
+            </tr>
+            <tr>
+                <td><strong>Precision</strong></td>
+                {% for m in perf_models %}<td>{% if m.is_empty %}—{% else %}{{ "%.2f"|format(m.precision_pct) }}%{% endif %}</td>{% endfor %}
+            </tr>
+            <tr>
+                <td><strong>Recall</strong></td>
+                {% for m in perf_models %}<td>{% if m.is_empty %}—{% else %}{{ "%.2f"|format(m.recall_pct) }}%{% endif %}</td>{% endfor %}
+            </tr>
+            <tr>
+                <td><strong>F1-Score</strong></td>
+                {% for m in perf_models %}<td>{% if m.is_empty %}—{% else %}{{ "%.2f"|format(m.f1_pct) }}%{% endif %}</td>{% endfor %}
+            </tr>
+            <tr>
+                <td><strong>Anti-phishing rate</strong></td>
+                {% for m in perf_models %}<td>{% if m.is_empty %}—{% else %}{{ "%.2f"|format(m.anti_phishing_rate_pct) }}%{% endif %}</td>{% endfor %}
+            </tr>
+            <tr>
+                <td><strong>Model complexity</strong></td>
+                {% for m in perf_models %}<td>{% if m.is_empty %}—{% else %}{{ m.complexity }}{% endif %}</td>{% endfor %}
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="abstract mt-4">
+        <h3>Performance analysis</h3>
+        <p>
+            <strong>Random Forest &amp; Feed Forward Neural Network (FFNN):</strong> Primary trained classifiers on engineered URL features.
+            Accuracy, precision, recall, and F1 are measured on the test split at a 0.5 probability threshold.
+        </p>
+        <p>
+            <strong>Wide &amp; Deep / TabNet columns:</strong> Metrics use the same backbone probability with the same
+            calibration-style adjustments as the live <em>Phishing Detection</em> page, evaluated on that test split
+            (not separate trained checkpoints unless you add them later).
+        </p>
+    </div>
+
+    <div class="text-center mt-4">
+        <a href="{{ url_for('phishing') }}" class="btn btn-primary">Back to Detection</a>
+        <a href="{{ url_for('home') }}" class="btn btn-secondary" style="margin-left: 10px;">Home</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    (function () {
+        const payload = {{ perf_chart|tojson }};
+        const canvas = document.getElementById('performanceChart');
+        if (!canvas || !payload || !payload.datasets || payload.datasets.length === 0) {
+            if (canvas && canvas.parentElement) {
+                canvas.parentElement.innerHTML = '<p class="alert alert-info" style="margin:0">Train the model to see the comparison chart.</p>';
+            }
+            return;
+        }
+        const ctx = canvas.getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: payload.labels,
+                datasets: payload.datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            font: { size: 14, weight: 'bold' },
+                            padding: 15,
+                            usePointStyle: true
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Model performance (test set)',
+                        font: { size: 16, weight: 'bold' },
+                        padding: 20
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            callback: function (value) { return value + '%'; },
+                            font: { size: 12 }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Score (%)',
+                            font: { size: 13, weight: 'bold' }
+                        }
+                    },
+                    x: {
+                        ticks: { font: { size: 12 } }
+                    }
+                }
+            }
+        });
+    })();
+</script>
+{% endblock %}
